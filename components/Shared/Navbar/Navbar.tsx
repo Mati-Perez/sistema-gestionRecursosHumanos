@@ -1,8 +1,8 @@
 "use client"
 
-import { BellRing, LogIn } from "lucide-react";
+import { BellRing } from "lucide-react";
 
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+//import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,13 @@ export function Navbar() {
           <BellRing />
         </Button>
 
+      </div>
+      
+    </div>
+  )
+}
+
+/*saque esto: 
         <SignedOut>
           <SignInButton>
             <Button>
@@ -30,10 +37,4 @@ export function Navbar() {
 
         <SignedIn>
           <UserButton />
-        </SignedIn>
-      </div>
-      
-    </div>
-  )
-}
-
+        </SignedIn>*/

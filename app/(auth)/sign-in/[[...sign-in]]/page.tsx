@@ -1,4 +1,4 @@
-import { SignIn } from '@clerk/nextjs'
+/*import { SignIn } from '@clerk/nextjs'
 
 export default function SignInPage() {
   return <div className="flex flex-col items-center justify-center gap-4 p-4">
@@ -8,3 +8,4 @@ export default function SignInPage() {
     <SignIn />
     </div>
 }
+*/
