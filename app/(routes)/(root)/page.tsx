@@ -33,7 +33,6 @@ export default function Directorio() {
   });
 
   useEffect(() => {
-    localStorage.removeItem("clientes");
     const guardados = localStorage.getItem("clientes");
     if (guardados) {
       setClientes(JSON.parse(guardados));

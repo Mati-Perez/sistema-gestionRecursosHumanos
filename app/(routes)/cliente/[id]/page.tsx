@@ -86,7 +86,7 @@ export default function DetalleCliente() {
 
   return (
     <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded shadow space-y-6 dark:bg-zinc-900 border-b dark:border-zinc-700">
-      <Link href="/directorio" className="text-blue-600 hover:underline text-sm">
+      <Link href="/" className="text-blue-600 hover:underline text-sm">
         ← Volver al directorio
       </Link>
 
