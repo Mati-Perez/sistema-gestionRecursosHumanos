@@ -61,7 +61,9 @@ export default function AjustesPage() {
   
         alert("Datos importados correctamente. Recargá la página para ver los cambios.");
       } catch (err) {
+        console.error("Error al importar datos:", err);
         alert("Hubo un error al importar los datos.");
+      
       }
     };
     reader.readAsText(file);

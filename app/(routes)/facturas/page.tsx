@@ -97,7 +97,7 @@ export default function PaginaFacturas() {
               <input
                 name={field}
                 type={field === "fecha" ? "date" : field === "monto" ? "number" : "text"}
-                value={(formData as any)[field]}
+                value={(formData as Record<string, string | number>)[field]}
                 onChange={manejarCambio}
                 className="border px-3 py-1 rounded"
                 required

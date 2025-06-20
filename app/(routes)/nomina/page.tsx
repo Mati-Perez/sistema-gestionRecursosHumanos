@@ -119,7 +119,7 @@ export default function PaginaNominas() {
       />
     </div>
   );
-
+  /*
   const celdaEstado = (estado: Pago["estado"]) => {
     const color =
       estado === "pagado"
@@ -132,7 +132,7 @@ export default function PaginaNominas() {
         {estado}
       </span>
     );
-  };
+  };*/
 
   const actualizarEstado = (id: string, nuevoEstado: Pago["estado"]) => {
     const actualizado = pagos.map((pago) =>
@@ -196,8 +196,8 @@ export default function PaginaNominas() {
         </select>
       </div>
 
-      <Tabla titulo="📅 Próximos pagos" pagos={pagosFuturos} celdaEstado={celdaEstado} actualizarEstado={actualizarEstado}/>
-      <Tabla titulo="🕘 Pagos realizados" pagos={pagosHistoricos} celdaEstado={celdaEstado} actualizarEstado={actualizarEstado}/>
+      <Tabla titulo="📅 Próximos pagos" pagos={pagosFuturos}  actualizarEstado={actualizarEstado}/>
+      <Tabla titulo="🕘 Pagos realizados" pagos={pagosHistoricos}  actualizarEstado={actualizarEstado}/>
     </div>
   );
 }
@@ -205,11 +205,10 @@ export default function PaginaNominas() {
 type TablaProps = {
   titulo: string;
   pagos: Pago[];
-  celdaEstado: (estado: Pago["estado"]) => React.JSX.Element;
   actualizarEstado: (id: string, estado: Pago["estado"]) => void;
 };
 
-function Tabla({ titulo, pagos, celdaEstado, actualizarEstado }: TablaProps) {
+function Tabla({ titulo, pagos, actualizarEstado }: TablaProps) {
   if (pagos.length === 0) return null;
   return (
     <div className="dark:bg-zinc-900 border-b dark:border-zinc-700">
