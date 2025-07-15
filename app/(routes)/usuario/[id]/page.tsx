@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, ChangeEvent, FormEvent } from "react";
+import { useEffect, useState, ChangeEvent, FormEvent, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Usuario, Rol } from "@prisma/client";
 import Image from "next/image";
@@ -29,7 +29,7 @@ export default function DetalleUsuario() {
     estado: true,
   });
 
-  const cargarDesdeAPI = async () => {
+  const cargarDesdeAPI = useCallback(async () => {
     try {
       const res = await fetch(`/api/usuarios/${id}`);
       const data = await res.json();
@@ -52,7 +52,7 @@ export default function DetalleUsuario() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     const local = localStorage.getItem(`usuario-${id}`);
@@ -70,7 +70,7 @@ export default function DetalleUsuario() {
     } else {
       cargarDesdeAPI();
     }
-  }, [id]);
+  }, [id, cargarDesdeAPI]);
 
   const manejarCambio = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
