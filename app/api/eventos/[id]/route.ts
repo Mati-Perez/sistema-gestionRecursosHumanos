@@ -1,6 +1,6 @@
 // app/api/eventos/[id]/route.ts
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { cookies } from "next/headers";
@@ -17,7 +17,14 @@ function esTokenPayload(obj: unknown): obj is TokenPayload {
   );
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest) {
+  const idRaw = req.nextUrl.pathname.split("/").pop();
+  const id = Number(idRaw);
+
+  if (!idRaw || isNaN(id)) {
+    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+  }
+
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -34,17 +41,20 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
   }
 
   const evento = await prisma.evento.findUnique({
-    where: { id: Number(params.id) },
+    where: { id },
   });
 
   if (!evento || evento.usuarioId !== usuarioId) {
     return NextResponse.json({ error: "Evento no encontrado o no autorizado" }, { status: 404 });
   }
 
-  await prisma.evento.delete({ where: { id: evento.id } });
+  await prisma.evento.delete({
+    where: { id },
+  });
 
   return NextResponse.json({ mensaje: "Evento eliminado correctamente" });
 }
+
 
 export async function PUT(req: Request) {
   const url = req.url || req.headers.get("x-url") || "";
