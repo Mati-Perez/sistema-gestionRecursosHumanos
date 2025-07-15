@@ -8,7 +8,7 @@ interface TokenPayload {
   email: string
 }
 
-const PUBLIC_ROUTES = ['/login', '/api/login']
+const PUBLIC_ROUTES = ['/login', '/api/login', "/logo.png", "/favicon.ico"]
 
 // 🔐 Verificación de token compatible con Edge
 async function verifyToken(token: string): Promise<TokenPayload> {
