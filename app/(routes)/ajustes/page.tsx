@@ -1,74 +1,51 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect } from "react";
+
+const descargarExcel = async () => {
+  const res = await fetch("/api/exportar-datos");
+  const blob = await res.blob();
+
+  console.log(blob)
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "backup_datos.xlsx";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
 
 export default function AjustesPage() {
   const [formatoFecha, setFormatoFecha] = useState("DD/MM/YYYY");
   const [moneda, setMoneda] = useState("ARS");
-  const [temaOscuro, setTemaOscuro] = useState(false);
+  const [esAdmin, setEsAdmin] = useState(false);
+  const [archivoNombre, setArchivoNombre] = useState("");
 
   useEffect(() => {
     const ajustes = localStorage.getItem("ajustes");
+    const local = localStorage.getItem("usuario");
+
     if (ajustes) {
       const datos = JSON.parse(ajustes);
       setFormatoFecha(datos.formatoFecha || "DD/MM/YYYY");
       setMoneda(datos.moneda || "ARS");
-      setTemaOscuro(datos.temaOscuro || false);
+    }
+
+    if (local) {
+      const usuario = JSON.parse(local);
+      setEsAdmin(usuario.rol === "ADMIN");
     }
   }, []);
 
   useEffect(() => {
     localStorage.setItem(
       "ajustes",
-      JSON.stringify({ formatoFecha, moneda, temaOscuro })
+      JSON.stringify({ formatoFecha, moneda })
     );
-  }, [formatoFecha, moneda, temaOscuro]);
-
-
-  const exportarDatos = () => {
-    const todo = { 
-      ajustes: localStorage.getItem("ajustes"),
-      facturas: localStorage.getItem("facturas"),
-      pagos: localStorage.getItem("pagos")
-    };
+  }, [formatoFecha, moneda]);
   
-    const blob = new Blob([JSON.stringify(todo, null, 2)], {
-      type: "application/json",
-    });
-  
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "datos_backup.json";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-  
-  const importarDatos = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-  
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const contenido = event.target?.result as string;
-        const datos = JSON.parse(contenido);
-  
-        if (datos.ajustes) localStorage.setItem("ajustes", datos.ajustes);
-        if (datos.facturas) localStorage.setItem("facturas", datos.facturas);
-        if (datos.pagos) localStorage.setItem("pagos", datos.pagos);
-  
-        alert("Datos importados correctamente. Recargá la página para ver los cambios.");
-      } catch (err) {
-        console.error("Error al importar datos:", err);
-        alert("Hubo un error al importar los datos.");
-      
-      }
-    };
-    reader.readAsText(file);
-  };
-
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6 dark:bg-zinc-900 border-b dark:border-zinc-700">
       <h1 className="text-3xl font-bold text-blue-700">Ajustes</h1>
@@ -98,39 +75,66 @@ export default function AjustesPage() {
             <option value="EUR">EUR</option>
           </select>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={temaOscuro}
-            onChange={(e) => setTemaOscuro(e.target.checked)}
-            id="temaOscuro"
+      {esAdmin && (
+        <div className="space-y-4 border-t pt-6">
+          <h2 className="text-lg font-semibold text-gray-700">Backup de datos</h2>
+
+          <button
+            onClick={descargarExcel}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer"
+          >
+            Exportar datos (.xslx)
+          </button>
+
+          <label className="block mt-4 text-sm text-gray-600 hover: cursor-pointer">
+            Importar archivo (.xsls) -
+            <input
+            type="file"
+            accept=".xlsx"
+            onChange={(e) => {
+              const archivo = e.target.files?.[0];
+
+              if (!archivo) return;
+
+              // 🛡️ Validación MIME
+              if (archivo.type !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+              alert("El archivo debe ser un .xlsx válido");
+              return;
+              }
+
+              // 🧪 Validación por extensión (extra)
+              if (!archivo.name.endsWith(".xlsx")) {
+              alert("Extensión inválida. Solo se permite .xlsx");
+              return;
+              }
+
+              setArchivoNombre(archivo.name);
+
+              const formData = new FormData();
+              formData.append("archivo", archivo);
+          
+              fetch("/api/importar-excel", {
+                method: "POST",
+                body: formData,
+              })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.ok) {
+                    alert("Importación exitosa:\n" + JSON.stringify(data.resumen, null, 2));
+                  } else {
+                    alert("Error: " + data.error);
+                  }
+                });
+            }}
           />
-          <label htmlFor="temaOscuro" className="text-sm text-gray-600">
-            Activar tema oscuro
+          {archivoNombre && (
+              <p className="mt-2 text-sm text-gray-600">Archivo seleccionado: <span className="font-medium">{archivoNombre}</span></p>
+            )}
           </label>
         </div>
-      </div>
-      <div className="space-y-4 border-t pt-6">
-        <h2 className="text-lg font-semibold text-gray-700">Backup de datos</h2>
-
-        <button
-          onClick={exportarDatos}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer"
-        >
-          Exportar datos (.json)
-        </button>
-
-        <label className="block mt-4 text-sm text-gray-600">
-          Importar archivo (.json)
-          <input
-            type="file"
-            accept=".json"
-            onChange={importarDatos}
-            className="block mt-1"
-          />
-        </label>
-      </div>
+      )}
     </div>
   );
 }

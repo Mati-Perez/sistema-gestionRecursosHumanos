@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Usuario {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  nombre   String
+  password String
+  rol      Rol      @default(CLIENTE)
+  estado   Boolean  @default(true)
+  creadoEn DateTime @default(now())
+  fotoUrl  String?
+
+  cliente Cliente?
+
+  eventos Evento[]
+}
+
+model Cliente {
+  id              Int         @id @default(autoincrement())
+  razonSocial     String
+  compania        String
+  cuit            String      @unique
+  dni             String
+  telefono        String
+  estado          Boolean     @default(true)
+  usuarioId       Int         @unique
+  apellido        String
+  email           String
+  nombre          String
+  profesion       String
+  usuario         Usuario     @relation(fields: [usuarioId], references: [id])
+  documentos      Documento[]
+  empleados       Empleado[]
+  facturas        Factura[]
+  pagosRealizados Pago[]      @relation("ClienteComoEmpleador")
+}
+
+model Empleado {
+  id        Int     @id @default(autoincrement())
+  nombre    String
+  puesto    String?
+  dni       String
+  telefono  String?
+  email     String?
+  compania  String?
+  estado    Boolean @default(true)
+  clienteId Int
+  apellido  String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  pagos     Pago[]
+}
+
+model Documento {
+  id        Int      @id @default(autoincrement())
+  titulo    String
+  contenido String
+  clienteId Int
+  creadoEn  DateTime @default(now())
+  cliente   Cliente  @relation(fields: [clienteId], references: [id])
+}
+
+model Factura {
+  id           Int           @id @default(autoincrement())
+  monto        Float
+  fechaPago    DateTime      // ← antes era 'fecha'
+  fechaCarga   DateTime      // ← se agrega automáticamente
+  estado       EstadoFactura
+  clienteId    Int
+  cliente      Cliente       @relation(fields: [clienteId], references: [id])
+}
+
+model Pago {
+  id          Int        @id @default(autoincrement())
+  fecha       DateTime
+  tipo        String
+  monto       Float
+  estado      EstadoPago @default(PENDIENTE)
+  empleadoId  Int
+  empleadorId Int?
+  empleado    Empleado   @relation(fields: [empleadoId], references: [id])
+  empleador   Cliente?   @relation("ClienteComoEmpleador", fields: [empleadorId], references: [id])
+}
+
+model Evento {
+  id        Int      @id @default(autoincrement())
+  fecha     DateTime
+  hora      String
+  texto     String
+  usuarioId Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  creadoEn  DateTime @default(now())
+}
+
+enum Rol {
+  ADMIN
+  CLIENTE
+  USUARIO
+}
+
+enum EstadoFactura {
+  PENDIENTE
+  PAGADA
+  CANCELADA
+}
+
+enum EstadoPago {
+  PENDIENTE
+  PAGADO
+  RETRASADO
+}

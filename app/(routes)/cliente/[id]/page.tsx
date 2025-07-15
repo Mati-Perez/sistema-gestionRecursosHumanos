@@ -30,22 +30,36 @@ export default function DetalleCliente() {
     compania: "",
   });
 
-  useEffect(() => {
-    const datos = localStorage.getItem("clientes");
-    if (!datos) return;
+  const cargarDesdeApi = async () => {
+    const res = await fetch(`/api/clientes/${id}`);
+    const data = await res.json();
+    setCliente(data);
+    localStorage.setItem(`cliente-${id}`, JSON.stringify(data));
+    setFormData({
+      nombre: data.nombre,
+      profesion: data.profesion,
+      avatarUrl: data.avatarUrl || "",
+      telefono: data.telefono || "",
+      email: data.email || "",
+      compania: data.compania || "",
+    });
+  };
 
-    const lista: Cliente[] = JSON.parse(datos);
-    const encontrado = lista.find((c) => c.id === id);
-    if (encontrado) {
-      setCliente(encontrado);
+  useEffect(() => {
+    const local = localStorage.getItem(`cliente-${id}`);
+    if (local) {
+      const clienteGuardado = JSON.parse(local);
+      setCliente(clienteGuardado);
       setFormData({
-        nombre: encontrado.nombre,
-        profesion: encontrado.profesion,
-        avatarUrl: encontrado.avatarUrl || "",
-        telefono: encontrado.telefono || "",
-        email: encontrado.email || "",
-        compania: encontrado.compania || "",
+        nombre: clienteGuardado.nombre,
+        profesion: clienteGuardado.profesion,
+        avatarUrl: clienteGuardado.avatarUrl || "",
+        telefono: clienteGuardado.telefono || "",
+        email: clienteGuardado.email || "",
+        compania: clienteGuardado.compania || "",
       });
+    } else {
+      cargarDesdeApi();
     }
   }, [id]);
 
@@ -53,35 +67,44 @@ export default function DetalleCliente() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const guardarCambios = (e: FormEvent) => {
+  const guardarCambios = async (e: FormEvent) => {
     e.preventDefault();
-    const datos = localStorage.getItem("clientes");
-    if (!datos) return;
+    const res = await fetch(`/api/clientes/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-    const lista: Cliente[] = JSON.parse(datos);
-    const actualizado: Cliente = { id: id as string, ...formData };
-    const nuevaLista = lista.map((c) => (c.id === id ? actualizado : c));
-
-    localStorage.setItem("clientes", JSON.stringify(nuevaLista));
-    setCliente(actualizado);
-    setModoEdicion(false);
+    if (res.ok) {
+      const actualizado = await res.json();
+      setCliente(actualizado);
+      setModoEdicion(false);
+      localStorage.setItem(`cliente-${id}`, JSON.stringify(actualizado)); // 💾 actualizar caché
+    }
   };
 
-  const eliminarCliente = () => {
-    if (!confirm("¿Estás seguro de que querés eliminar este cliente?")) return;
+  const eliminarCliente = async () => {
+    const confirmar = confirm("¿Estás seguro de que querés eliminar este cliente?");
+    if (!confirmar) return;
 
-    const datos = localStorage.getItem("clientes");
-    if (!datos) return;
+    const res = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      localStorage.removeItem(`cliente-${id}`); // 🧹 limpiar caché
+      router.push("/directorio");
+    }
+  };
 
-    const lista: Cliente[] = JSON.parse(datos);
-    const nuevaLista = lista.filter((c) => c.id !== id);
-
-    localStorage.setItem("clientes", JSON.stringify(nuevaLista));
-    router.push("/directorio");
+  const actualizarManual = () => {
+    localStorage.removeItem(`cliente-${id}`);
+    cargarDesdeApi();
   };
 
   if (!cliente) {
-    return <div className="p-6 text-center text-gray-500">Cliente no encontrado.</div>;
+    return (
+      <div className="p-6 text-center text-gray-500">
+        Cargando cliente...
+      </div>
+    );
   }
 
   return (
@@ -89,6 +112,15 @@ export default function DetalleCliente() {
       <Link href="/" className="text-blue-600 hover:underline text-sm">
         ← Volver al directorio
       </Link>
+
+      <div className="flex justify-center pt-2">
+        <button
+          onClick={actualizarManual}
+          className="bg-gray-200 h-10 hover:bg-gray-300 cursor-pointer text-sm px-3 py-1 rounded-md"
+        >
+          🔄 Actualizar cliente
+        </button>
+      </div>
 
       {!modoEdicion ? (
         <>

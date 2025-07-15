@@ -1,140 +1,124 @@
-"use client";
+"use client"
 
-import { useEffect, useState, ChangeEvent, FormEvent } from "react";
-import { Search, User } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import Link from "next/link";
-import Image from "next/image";
+import { useEffect, useState, ChangeEvent, FormEvent } from "react"
+import { Search, User } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { toast } from 'sonner'
+import Link from "next/link"
+import Image from "next/image"
 
 type Cliente = {
-  id: string;
-  nombre: string;
-  profesion: string;
-  avatarUrl?: string;
-  telefono?: string;
-  email?: string;
-  compania?: string;
-};
+  id: string
+  nombre: string
+  profesion: string
+  avatarUrl?: string
+  telefono?: string
+  email?: string
+  compania?: string
+}
 
-const CLIENTES_POR_PAGINA = 15;
+const CLIENTES_POR_PAGINA = 15
 
 export default function Directorio() {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [filtro, setFiltro] = useState("");
-  const [paginaActual, setPaginaActual] = useState(1);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [filtro, setFiltro] = useState("")
+  const [paginaActual, setPaginaActual] = useState(1)
+  const [totalPaginas, setTotalPaginas] = useState(1)
+  const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [formData, setFormData] = useState<Omit<Cliente, "id">>({
     nombre: "",
     profesion: "",
     avatarUrl: "",
     telefono: "",
     email: "",
-    compania: "",
-  });
+    compania: ""
+  })
+  const [errores, setErrores] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    const guardados = localStorage.getItem("clientes");
-    if (guardados) {
-      setClientes(JSON.parse(guardados));
-    } else {
-      const iniciales: Cliente[] = [
-        {
-          id: crypto.randomUUID(),
-          nombre: "Sofía Martínez",
-          profesion: "Diseñadora UX/UI",
-          avatarUrl: "https://i.pravatar.cc/150?img=47",
-          telefono: "11 2345 6789",
-          email: "sofia@example.com",
-          compania: "Diseño Creativo SRL",
-        },
-        {
-          id: crypto.randomUUID(),
-          nombre: "Juan Pérez",
-          profesion: "Contador Público",
-          avatarUrl: "https://i.pravatar.cc/150?img=5",
-          telefono: "11 8888 1234",
-          email: "juanperez@contadores.com",
-          compania: "Estudio Pérez & Asociados",
-        },
-        {
-          id: crypto.randomUUID(),
-          nombre: "Camila Torres",
-          profesion: "Abogada Laboral",
-          avatarUrl: "https://i.pravatar.cc/150?img=15",
-          telefono: "11 4567 8910",
-          email: "camila.torres@estudiotorres.com",
-          compania: "Estudio Jurídico Torres"
-        },
-        {
-          id: crypto.randomUUID(),
-          nombre: "Lucas Fernández",
-          profesion: "Desarrollador Full Stack",
-          avatarUrl: "https://i.pravatar.cc/150?img=26",
-          telefono: "11 9999 1122",
-          email: "lucas.fernandez@techloop.io",
-          compania: "TechLoop"
-        },
-        {
-          id: crypto.randomUUID(),
-          nombre: "Valentina Rojas",
-          profesion: "Arquitecta",
-          avatarUrl: "https://i.pravatar.cc/150?img=33",
-          telefono: "11 7812 3344",
-          email: "vrojas@arquiestudio.com",
-          compania: "ArquiEstudio"
+    const cargarClientes = async () => {
+      const cache = localStorage.getItem("clientes");
+      if (cache && !filtro && paginaActual === 1) {
+        const data: Cliente[] = JSON.parse(cache);
+        setClientes(data); // ← ya es el array directamente
+        setTotalPaginas(Math.ceil(data.length / CLIENTES_POR_PAGINA)); // asumimos que hay que calcular así
+        return;
+      }
+      try {
+        const res = await fetch(`/api/clientes?pagina=${paginaActual}&filtro=${encodeURIComponent(filtro)}`);
+        const data = await res.json();
+        setClientes(data.clientes);
+        setTotalPaginas(Math.ceil(data.total / CLIENTES_POR_PAGINA));
+  
+        // Solo cacheamos si no hay filtro y es la primera página
+        if (!filtro && paginaActual === 1) {
+          localStorage.setItem("clientes", JSON.stringify(data.clientes));
         }
-      ];
-      localStorage.setItem("clientes", JSON.stringify(iniciales));
-      setClientes(iniciales);
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("clientes", JSON.stringify(clientes));
-  }, [clientes]);
-
-  const clientesFiltrados = clientes.filter((c) =>
-    [c.nombre, c.profesion].some((campo) =>
-      campo.toLowerCase().includes(filtro.toLowerCase())
-    )
-  );
-
-  const totalPaginas = Math.ceil(clientesFiltrados.length / CLIENTES_POR_PAGINA);
-  const clientesPagina = clientesFiltrados.slice(
-    (paginaActual - 1) * CLIENTES_POR_PAGINA,
-    paginaActual * CLIENTES_POR_PAGINA
-  );
+      } catch (error) {
+        console.error("Error al obtener clientes:", error);
+      }
+    };
+  
+    cargarClientes();
+  }, [paginaActual, filtro]);
 
   const manejarCambio = (e: ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    setErrores((prev) => ({ ...prev, [e.target.name]: "" }))
+  }
 
-  const manejarSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!formData.nombre.trim() || !formData.profesion.trim()) return;
+  const manejarSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    const nuevosErrores: Record<string, string> = {}
 
-    const nuevoCliente: Cliente = {
-      id: crypto.randomUUID(),
-      ...formData,
-    };
+    if (!formData.nombre.trim()) nuevosErrores.nombre = "El nombre es obligatorio"
+    if (!formData.profesion.trim()) nuevosErrores.profesion = "La profesión es obligatoria"
+    if (formData.email && !/^[\w-.]+@([\w-]+\.)+[\w-]{2,}$/.test(formData.email))
+      nuevosErrores.email = "Correo electrónico inválido"
 
-    setClientes((prev) => [nuevoCliente, ...prev]);
-    setFormData({
-      nombre: "",
-      profesion: "",
-      avatarUrl: "",
-      telefono: "",
-      email: "",
-      compania: "",
-    });
-    setMostrarFormulario(false);
-  };
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrores(nuevosErrores)
+      return
+    }
+
+    try {
+      const res = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      })
+
+      if (res.ok) {
+        const nuevo = await res.json()
+        setClientes((prev) => [nuevo, ...prev])
+        setFormData({
+          nombre: "",
+          profesion: "",
+          avatarUrl: "",
+          telefono: "",
+          email: "",
+          compania: ""
+        })
+        setErrores({})
+        setMostrarFormulario(false)
+        toast.success("Cliente guardado exitosamente", {
+          description: `${formData.nombre} fue agregado al directorio`,
+        })
+        setPaginaActual(1)
+        setFiltro("")
+      } else {
+        console.error("Error al crear cliente:", await res.text())
+      }
+    } catch (err) {
+      console.error("Error al enviar:", err)
+    }
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6 dark:bg-zinc-900 border-b dark:border-zinc-700">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-blue-700">Directorio</h1>
+          <h1 className="text-3xl font-bold text-blue-700">Clientes</h1>
           <p className="text-gray-600">Contactá con tus clientes</p>
         </div>
         <button
@@ -154,8 +138,8 @@ export default function Directorio() {
             className="w-full border-0 focus:outline-none"
             value={filtro}
             onChange={(e) => {
-              setFiltro(e.target.value);
-              setPaginaActual(1);
+              setFiltro(e.target.value)
+              setPaginaActual(1)
             }}
           />
         </div>
@@ -167,13 +151,53 @@ export default function Directorio() {
           className="bg-gray-100 p-6 rounded-md space-y-4 border"
         >
           <div className="grid sm:grid-cols-2 gap-4">
-            <Input name="nombre" placeholder="Nombre" value={formData.nombre} onChange={manejarCambio} required />
-            <Input name="profesion" placeholder="Profesión" value={formData.profesion} onChange={manejarCambio} required />
+            <div>
+              <Input
+                name="nombre"
+                placeholder="Nombre"
+                value={formData.nombre}
+                onChange={manejarCambio}
+                className={errores.nombre ? "border-red-500" : ""}
+                required
+              />
+              {errores.nombre && (
+                <p className="text-red-500 text-sm mt-1">{errores.nombre}</p>
+              )}
+            </div>
+
+            <div>
+              <Input
+                name="profesion"
+                placeholder="Profesión"
+                value={formData.profesion}
+                onChange={manejarCambio}
+                className={errores.profesion ? "border-red-500" : ""}
+                required
+              />
+              {errores.profesion && (
+                <p className="text-red-500 text-sm mt-1">{errores.profesion}</p>
+              )}
+            </div>
+
             <Input name="telefono" placeholder="Teléfono" value={formData.telefono} onChange={manejarCambio} />
-            <Input name="email" placeholder="Correo electrónico" value={formData.email} onChange={manejarCambio} />
+
+            <div>
+              <Input
+                name="email"
+                placeholder="Correo electrónico"
+                value={formData.email}
+                onChange={manejarCambio}
+                className={errores.email ? "border-red-500" : ""}
+              />
+              {errores.email && (
+                <p className="text-red-500 text-sm mt-1">{errores.email}</p>
+              )}
+            </div>
+
             <Input name="compania" placeholder="Compañía" value={formData.compania} onChange={manejarCambio} />
             <Input name="avatarUrl" placeholder="URL de avatar (opcional)" value={formData.avatarUrl} onChange={manejarCambio} />
           </div>
+
           <div className="text-right">
             <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 cursor-pointer">
               Guardar cliente
@@ -181,9 +205,21 @@ export default function Directorio() {
           </div>
         </form>
       )}
+      <div className="flex justify-center pt-2">
+      <button
+        onClick={() => {
+          localStorage.removeItem("clientes-caché");
+          setFiltro("");
+          setPaginaActual(1);
+        }}
+        className="bg-gray-200 h-10 hover:bg-gray-300 cursor-pointer text-sm px-3 py-1 rounded-md"
+      >
+        🔄 Actualizar listado
+      </button>
+    </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {clientesPagina.map((cliente) => (
+        {clientes.map((cliente) => (
           <Link
             key={cliente.id}
             href={`/cliente/${cliente.id}`}
@@ -209,6 +245,7 @@ export default function Directorio() {
           </Link>
         ))}
       </div>
+      
 
       <div className="flex justify-center gap-2 pt-4">
         {Array.from({ length: totalPaginas }, (_, i) => (
@@ -224,5 +261,5 @@ export default function Directorio() {
         ))}
       </div>
     </div>
-  );
+  )
 }

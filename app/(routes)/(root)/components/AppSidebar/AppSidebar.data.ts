@@ -1,14 +1,24 @@
-import { Calendar, Contact, FileText, ClipboardList, Settings, FileTextIcon } from "lucide-react";
+import { Calendar, Contact, FileText, ClipboardList, Settings, FileTextIcon, User2, LogOutIcon } from "lucide-react";
 
 export const routes = [
   {
-    title: "Directorio",
+    title: "Clientes",
     url: "/",
     icon: Contact,
   },
   {
-    title: "Calendario",
+    title: "Usuarios",
+    url: "/usuarios",
+    icon: User2,
+  },
+  {
+    title: "Calendario personal",
     url: "/calendario",
+    icon: Calendar,
+  },
+  {
+    title: "Calendario de aportes",
+    url: "/aportes",
     icon: Calendar,
   },
   {
@@ -30,6 +40,12 @@ export const routes = [
     title: "Ajustes",
     url: "/ajustes",
     icon: Settings,
+  },
+  {
+    title: "Salir",
+    url: "/logout",
+    icon: LogOutIcon,
+    action: true,
   }
 ];
 

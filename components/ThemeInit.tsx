@@ -14,5 +14,5 @@ export function ThemeInit() {
     }
   }, []);
 
-  return null; // no renderiza nada visible
+  return null;
 }
