@@ -154,14 +154,17 @@ export async function GET() {
     hoja.columns = [
       { header: "id", key: "id" },
       { header: "monto", key: "monto" },
-      { header: "fecha", key: "fecha" },
+      { header: "fechaPago", key: "fechaPago" },
+      { header: "fechaCarga", key: "fechaCarga" },
       { header: "estado", key: "estado" },
       { header: "clienteId", key: "clienteId" },
     ];
+
     hoja.addRows(facturas.map((f) => ({
       id: f.id,
       monto: f.monto,
-      fecha: f.fecha.toISOString(),
+      fechaPago: f.fechaPago.toISOString(),
+      fechaCarga: f.fechaCarga.toISOString(),
       estado: f.estado,
       clienteId: f.clienteId,
     })));
