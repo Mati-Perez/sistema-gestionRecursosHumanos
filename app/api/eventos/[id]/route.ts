@@ -46,7 +46,15 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
   return NextResponse.json({ mensaje: "Evento eliminado correctamente" });
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request) {
+  const url = req.url || req.headers.get("x-url") || "";
+  const idStr = url.split("/").pop();
+  const id = Number(idStr);
+
+  if (!idStr || isNaN(id)) {
+    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+  }
+
   const body = await req.json();
   const { hora, texto } = body;
 
@@ -70,7 +78,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 
   const evento = await prisma.evento.findUnique({
-    where: { id: Number(params.id) },
+    where: { id },
   });
 
   if (!evento || evento.usuarioId !== usuarioId) {
@@ -78,11 +86,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 
   const actualizado = await prisma.evento.update({
-    where: { id: evento.id },
-    data: {
-      hora,
-      texto,
-    },
+    where: { id },
+    data: { hora, texto },
   });
 
   return NextResponse.json(actualizado);
