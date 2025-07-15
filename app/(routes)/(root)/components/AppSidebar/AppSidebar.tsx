@@ -25,11 +25,19 @@ export function AppSidebar({ rol }: { rol: 'ADMIN' | 'CLIENTE' | 'USUARIO' }) {
 
 
   const filteredRoutes = routes.filter((item) => {
-    if (item.action) return true;
-    if (rol === "CLIENTE") return item.title !== "Clientes" && item.title !== "Usuarios";
-    if (rol === "USUARIO") return item.title !== "Usuarios";
-    return true;
-  });
+  if (item.action) return true;
+
+  const isAdmin = rol === "ADMIN";
+  const isCliente = rol === "CLIENTE";
+
+  // Usuarios solo visibles para ADMIN
+  if (!isAdmin && item.title === "Usuarios") return false;
+
+  // Clientes ocultos para CLIENTE
+  if (isCliente && item.title === "Clientes") return false;
+
+  return true;
+});
 
   return (
     <Sidebar collapsible="icon">
