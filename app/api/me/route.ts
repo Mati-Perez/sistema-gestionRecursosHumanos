@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET!)
     const { payload } = await jwtVerify(token, secret)
     return NextResponse.json(payload)
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
   }
 }

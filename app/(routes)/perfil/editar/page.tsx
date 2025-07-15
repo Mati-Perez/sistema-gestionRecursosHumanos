@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import jwtDecode from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 import { useRouter } from 'next/navigation'
 
 interface TokenPayload {

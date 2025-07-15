@@ -18,15 +18,6 @@ export async function POST(req: NextRequest) {
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
 
-  const upload = await cloudinary.uploader.upload_stream(
-    { folder: 'usuarios' },
-    (err, result) => {
-      if (err || !result) {
-        return NextResponse.json({ mensaje: 'Error al subir imagen' }, { status: 500 })
-      }
-    }
-  )
-
   const stream = cloudinary.uploader.upload_stream(
     { folder: 'usuarios' },
     (err, result) => {
